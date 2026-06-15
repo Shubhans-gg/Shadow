@@ -1,4 +1,7 @@
 import pyttsx3
+# import edge_tts
+# import asyncio
+# import pygame
 import webbrowser
 import speech_recognition as sr
 import time
@@ -17,25 +20,60 @@ load_dotenv()
 
 r = sr.Recognizer()
 
+# pygame.mixer.init()
+
 webbrowser.register('brave', None, webbrowser.BackgroundBrowser("C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"))
+
+#This was way slower than pyttsx3
+# async def speak_async(text):
+#     communicate = edge_tts.Communicate(text, voice="en-US-ChristopherNeural")  
+#     await communicate.save("speech.mp3")
+
+# def speak(text):
+#     # 2. Fetch the audio from the internet and save it
+#     asyncio.run(speak_async(text))
+    
+#     # 3. Load and play the file
+#     pygame.mixer.music.load("speech.mp3")
+#     pygame.mixer.music.play()
+    
+#     # 4. Wait for it to finish speaking
+#     while pygame.mixer.music.get_busy():
+#         time.sleep(0.1)
+        
+#     # 5. Unload the file from memory so it can be overwritten safely next time
+#     pygame.mixer.music.unload()
+
 
 def speak(text):
     engine = pyttsx3.init()
     engine.say(text)
     engine.runAndWait()
-    time.sleep(1)
+    #time.sleep(1)
+    del engine  # This forces Python to instantly destroy the engine and free up the system increasing speed
+
 
 def get_weather(city):
     key = os.getenv("WEATHER_API_KEY")
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={key}&units=metric"
-    data = requests.get(url).json() 
-    temp = data["main"]["temp"]
-    desc = data["weather"][0]["description"]
-    return f"{city} is {temp}°C with {desc}"
+    try:
+        response = requests.get(url)
+        # Check if the API request was successful (Status Code 200)
+        if response.status_code == 200:
+            data = response.json()
+            temp = data["main"]["temp"]
+            desc = data["weather"][0]["description"]
+            return f"The weather in {city} is currently {temp} degrees Celsius with {desc}."
+        elif response.status_code == 404:
+            return f"Master,I wasn't able to find a city named {city}. There may be something wrong with the spelling."
+        else:
+            return "I'm having trouble accessing the weather service right now."
+    except Exception as e:
+        return f"Error fetching weather: {e}"
 
 def get_news():
     key = os.getenv("NEWS_API_KEY")
-    # try this URL instead
+    
     url = f"https://newsapi.org/v2/top-headlines?language=en&apiKey={key}&pageSize=3"
     data = requests.get(url).json()
     
@@ -68,25 +106,12 @@ def fxn(c):
         result = random.choice(["Heads", "Tails"])
         print(f"It's {result}")
         speak(f"It's {result}")
+
     elif "roll a dice" in c.lower():
         result = random.randint(1, 6)
         print(f"You rolled {result}")
         speak(f"You rolled {result}")
     
-    elif c.lower().startswith("calculate"):
-        query = c.lower().replace("calculate", "").strip()
-        query = query.replace("plus", "+")
-        query = query.replace("minus", "-")
-        query = query.replace("times", "*")
-        query = query.replace("multiplied by", "*")
-        query = query.replace("divided by", "/")
-        query = query.replace("power", "**")
-        try:
-            result = eval(query)
-            print(result)
-            speak(f"The answer is {result}")
-        except:
-            speak("Sorry, I couldn't calculate that")
 
     elif "translate" in c.lower():
         query = c.lower().replace("translate", "").replace("to hindi", "").strip()
@@ -95,7 +120,7 @@ def fxn(c):
         speak(f"The translation is")
         webbrowser.open(f"https://translate.google.com/?sl=en&tl=hi&text={query}")
 
-#really hard to do
+
     elif "weather" in c.lower():
         city = c.lower()
         # remove all these words
@@ -104,7 +129,7 @@ def fxn(c):
         city = city.strip()
         if not city:
             city = "Fatehpur"  # default city when no city mentioned
-        print(f"Searching weather for: {city}")  # debug
+        print(f"Searching weather for: {city}")  
         result = get_weather(city)
         print(result)
         speak(result)
@@ -158,50 +183,61 @@ def fxn(c):
 
 if __name__=="__main__":
     speak("Initializing Shadow...")
+    with sr.Microphone() as source:
+        print("Calibrating background noise...")
     
-    while True:
-        if keyboard.is_pressed("esc"):
-            speak("Goodbye Master")
-            exit()
-        print("recognising...")
-        
-        # # recognize speech using Sphinx
-        # try:
-        #     print("Sphinx thinks you said " + r.recognize_sphinx(audio))
-        # except sr.UnknownValueError:
-        #     print("Sphinx could not understand audio")
-        # except sr.RequestError as e:
-        #     print("Sphinx error; {0}".format(e))
+        r.adjust_for_ambient_noise(source, duration=1) 
+        speak("Shadow is online.")
+    
+        while True:
 
-        # recognize speech using Google Speech Recognition
-        try:
-            # for testing purposes, we're just using the default API key
-            # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
-            # instead of `r.recognize_google(audio)`
-             
-            with sr.Microphone() as source:
-                # r.adjust_for_ambient_noise(source)  # Without it, mic picks up background noise and recognition suffers
-                print("Say something!")
-                audio = r.listen(source)      #,timeout=5, phrase_time_limit=3
-            word=r.recognize_google(audio)
-            print(word)
-            if (word.lower()=="arise"):
-                speak("Yes master")
-                with sr.Microphone() as source:
-    
-                    print("Shadow activated")
-                    audio = r.listen(source)
-                    try:
-                        command=r.recognize_google(audio)
-                        print(command)
-                        fxn(command)
-                    except sr.UnknownValueError:
-                        speak("Sorry Master but I couldn't understand that command")
-            
-            elif "rest" in word.lower():
-                speak("As you command, Master")
+            if keyboard.is_pressed("esc"):
+                speak("Sorry Master")
                 exit()
-        except sr.UnknownValueError:
-            print("Google Speech Recognition could not understand audio")
-        except sr.RequestError as e:
-            print("Could not request results from Google Speech Recognition service; {0}".format(e))
+            
+            print("\nWaiting for wake word...")
+            
+            # # recognize speech using Sphinx
+            # try:
+            #     print("Sphinx thinks you said " + r.recognize_sphinx(audio))
+            # except sr.UnknownValueError:
+            #     print("Sphinx could not understand audio")
+            # except sr.RequestError as e:
+            #     print("Sphinx error; {0}".format(e))
+
+            # recognize speech using Google Speech Recognition
+            try:
+                # for testing purposes, we're just using the default API key
+                # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
+                # instead of `r.recognize_google(audio)`
+                
+                    # r.adjust_for_ambient_noise(source)  # Without it, mic picks up background noise and recognition suffers
+                    audio = r.listen(source, timeout=None, phrase_time_limit=3)
+                    word = r.recognize_google(audio).lower()
+                    print(word)
+
+                    if (word.lower()=="arise"):
+                        speak("Yes master")
+                        print("Shadow activated")
+                        
+                        try:
+                            command_audio = r.listen(source, timeout=5, phrase_time_limit=8)
+                            command = r.recognize_google(command_audio)
+                            print(command)
+
+                            fxn(command)
+
+                        except sr.UnknownValueError:
+                            speak("Sorry Master but I couldn't understand that command")
+                        except sr.WaitTimeoutError:
+                            print("Didn't hear a command. Going to sleep.")
+                    
+                    elif "rest" in word.lower():
+                        speak("As you command, Master")
+                        exit()
+
+            except sr.UnknownValueError:
+                print("Google Speech Recognition could not understand audio")
+                pass
+            except sr.RequestError as e:
+                print("Could not request results from Google Speech Recognition service; {0}".format(e))
