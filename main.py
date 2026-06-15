@@ -17,6 +17,8 @@ load_dotenv()
 
 r = sr.Recognizer()
 
+webbrowser.register('brave', None, webbrowser.BackgroundBrowser("C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"))
+
 def speak(text):
     engine = pyttsx3.init()
     engine.say(text)
@@ -43,7 +45,7 @@ def get_news():
     return headlines
 
 def fxn(c):
-    
+
     if c.lower().startswith("search"):
         query = c.split(" ", 1)[1]
         webbrowser.open(f"https://google.com/search?q={query}")
@@ -140,7 +142,7 @@ def fxn(c):
         song=c.lower().split(" ",1)[1]
         for key in music_lib.music:
             if key.lower() == song.lower():
-                webbrowser.open(music_lib.music[key])
+                webbrowser.get('brave').open(music_lib.music[key])
 
     elif "rest" in c.lower():
         speak("As you command, Master")
