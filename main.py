@@ -232,7 +232,7 @@ if __name__=="__main__":
                         except sr.WaitTimeoutError:
                             print("Didn't hear a command. Going to sleep.")
                     
-                    elif "rest" in word.lower():
+                    if "rest" in word.lower().split():
                         speak("As you command, Master")
                         exit()
 
