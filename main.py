@@ -26,20 +26,29 @@ def speak(text):
 def get_weather(city):
     key = os.getenv("WEATHER_API_KEY")
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={key}&units=metric"
-    data = requests.get(url).json()
+    data = requests.get(url).json() 
     temp = data["main"]["temp"]
     desc = data["weather"][0]["description"]
     return f"{city} is {temp}°C with {desc}"
 
 def get_news():
     key = os.getenv("NEWS_API_KEY")
-    url = f"https://newsapi.org/v2/top-headlines?country=in&apiKey={key}&pageSize=3"
+    # try this URL instead
+    url = f"https://newsapi.org/v2/top-headlines?language=en&apiKey={key}&pageSize=3"
     data = requests.get(url).json()
+    
+    if not data["articles"]:
+        return ["No news found"]
     headlines = [article["title"] for article in data["articles"][:3]]
     return headlines
 
 def fxn(c):
-    if "open youtube" in c.lower():
+    
+    if c.lower().startswith("search"):
+        query = c.split(" ", 1)[1]
+        webbrowser.open(f"https://google.com/search?q={query}")
+
+    elif "open youtube" in c.lower():
         webbrowser.open("https://www.youtube.com/")
     elif "open reddit" in c.lower():
         webbrowser.open("https://www.reddit.com/")
@@ -80,27 +89,44 @@ def fxn(c):
     elif "translate" in c.lower():
         query = c.lower().replace("translate", "").replace("to hindi", "").strip()
         result = GoogleTranslator(source="auto", target="hi").translate(query)
-        speak(result)
+        print(f"Translation: {result}")
+        speak(f"The translation is")
+        webbrowser.open(f"https://translate.google.com/?sl=en&tl=hi&text={query}")
 
+#really hard to do
     elif "weather" in c.lower():
-        city = c.lower().replace("weather", "").replace("in", "").strip()
+        city = c.lower()
+        # remove all these words
+        for word in ["weather", "how is the", "what is the", "today","today's", "report", "in", "at", "of"]:
+            city = city.replace(word, "")
+        city = city.strip()
         if not city:
-            city = "Fatehpur"  # default city
+            city = "Fatehpur"  # default city when no city mentioned
+        print(f"Searching weather for: {city}")  # debug
         result = get_weather(city)
         print(result)
         speak(result)
 
     elif "news" in c.lower():
         headlines = get_news()
-        speak("Here are today's top headlines")
-        for headline in headlines:
-            print(headline)
-            speak(headline)
-            time.sleep(0.5)
+        if headlines == ["No news found"]:
+            speak("Sorry, I couldn't fetch the news right now")
+        else:
+            speak("Here are today's top headlines")
+            for i, headline in enumerate(headlines):
+                print(f"Headline {i+1}: {headline}")
+                try:
+                    clean = headline.encode("ascii", "ignore").decode()
+                    
+                    speak(clean)
+                except:
+                    print(f"Couldn't speak headline {i+1}")
+                time.sleep(0.5)
     
     elif "wikipedia" in c.lower():
         query = c.lower().replace("wikipedia", "").strip()
         try:
+            wikipedia.set_user_agent("Shadow/1.0")
             result = wikipedia.summary(query, sentences=3)
             print(result)
             speak(result)
@@ -109,9 +135,6 @@ def fxn(c):
         except wikipedia.exceptions.PageError:
             speak("Sorry, I couldn't find anything on Wikipedia for that")
 
-    elif c.lower().startswith("search"):
-        query = c.split(" ", 1)[1]
-        webbrowser.open(f"https://google.com/search?q={query}")
 
     elif c.lower().startswith("play"):
         song=c.lower().split(" ",1)[1]
