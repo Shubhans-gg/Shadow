@@ -6,7 +6,7 @@ A Python-based voice assistant that responds to voice commands and answers quest
 -  Wake word activation ("arise")
 -  Gemini AI for smart responses
 -  Open websites by voice
--  Music playback via YouTube
+-  Play YouTube videos
 -  Wikipedia search
 -  Google search
 -  Weather updates
@@ -26,6 +26,7 @@ A Python-based voice assistant that responds to voice commands and answers quest
 - NewsAPI
 - Wikipedia
 - Deep Translator
+- pywhatkit
 
 ## Setup
 1. Clone the repo
@@ -56,3 +57,11 @@ NEWS_API_KEY=your_key
 | "flip a coin" | Heads or tails |
 | "roll a dice" | Random 1-6 |
 | "rest" | Shutdown Shadow |
+
+## Note
+- Brave Browser is used by default if installed, otherwise falls back to your default browser
+- Hindi translation opens Google Translate in browser (TTS doesn't support Hindi)
+- Gemini API free tier has rate limits — if Shadow doesn't respond, wait a moment and try again
+
+## Author
+Built by [Shubhans](https://github.com/Shubhans-gg) 🖤
