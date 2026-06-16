@@ -3,9 +3,9 @@ import pyttsx3
 # import asyncio
 # import pygame
 import webbrowser
+import pywhatkit
 import speech_recognition as sr
 import time
-import music_lib
 import ai
 import wikipedia
 import subprocess
@@ -22,7 +22,14 @@ r = sr.Recognizer()
 
 # pygame.mixer.init()
 
-webbrowser.register('brave', None, webbrowser.BackgroundBrowser("C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"))
+#webbrowser.register('brave', None, webbrowser.BackgroundBrowser("C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"))
+
+#this will check if the user has brave, if not then just stick to the default browser
+brave_path = "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+if os.path.exists(brave_path):
+    webbrowser.register('brave', None, webbrowser.BackgroundBrowser(brave_path))
+    webbrowser.open = webbrowser.get('brave').open
+
 
 #This was way slower than pyttsx3
 # async def speak_async(text):
@@ -162,14 +169,17 @@ def fxn(c):
         except wikipedia.exceptions.PageError:
             speak("Sorry, I couldn't find anything on Wikipedia for that")
 
+    
 
     elif c.lower().startswith("play"):
         song=c.lower().split(" ",1)[1]
-        for key in music_lib.music:
-            if key.lower() == song.lower():
-                webbrowser.get('brave').open(music_lib.music[key])
+        print(f"Playing {song} on YouTube...")
+        pywhatkit.playonyt(song)
+    #     for key in music_lib.music:
+    #         if key.lower() == song.lower():
+    #             webbrowser.get('brave').open(music_lib.music[key])
 
-    elif "rest" in c.lower():
+    elif "rest" in c.lower().split():
         speak("As you command, Master")
         exit()
 
@@ -177,9 +187,13 @@ def fxn(c):
         # anything unrecognised → ask Gemini
         print("Asking Gemini...")
         response = ai.ask_gemini(c)
-        print("Gemini:", response)
-        speak(response)
+        if str(response).startswith("Error:"):
+            print(f"Gemini API Error: {response}")
+            speak("Master, other people requests have surrounded me, I'll be at your command very soon")
+        else:
     
+            print("Gemini:", response)
+            speak(response)
 
 if __name__=="__main__":
     speak("Initializing Shadow...")
