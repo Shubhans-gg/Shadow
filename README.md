@@ -47,7 +47,7 @@ NEWS_API_KEY=your_key
 |---|---|
 | "arise" | Wake up Shadow |
 | "open youtube" | Opens YouTube |
-| "play [song]" | Plays song on YouTube |
+| "play [video title]" | Plays the video on YouTube |
 | "search [query]" | Google search |
 | "[topic] wikipedia" | Wikipedia summary |
 | "weather in [city]" | Weather update |
